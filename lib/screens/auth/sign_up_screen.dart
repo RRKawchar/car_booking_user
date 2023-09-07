@@ -4,7 +4,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import 'package:user_currentlocation_test/components/custom_textfield.dart';
-import 'package:user_currentlocation_test/firebase_service/auth_service.dart';
+import 'package:user_currentlocation_test/firebase_helper/auth_service.dart';
 import 'package:user_currentlocation_test/utils/helper_class.dart';
 import 'package:user_currentlocation_test/provider/location_provider.dart';
 import 'package:user_currentlocation_test/screens/auth/login_screen.dart';

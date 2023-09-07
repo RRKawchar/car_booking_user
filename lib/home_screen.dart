@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:provider/provider.dart';
-import 'package:user_currentlocation_test/firebase_service/auth_service.dart';
+import 'package:user_currentlocation_test/firebase_helper/auth_service.dart';
 import 'package:user_currentlocation_test/provider/location_provider.dart';
 import 'package:user_currentlocation_test/utils/text_style.dart';
 

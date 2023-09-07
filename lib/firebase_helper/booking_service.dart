@@ -6,6 +6,7 @@ import 'package:user_currentlocation_test/utils/helper_class.dart';
 class BookingService{
 
   static Future<void> bookingPassenger({
+    required String deviceToken,
     required String name,
     required String email,
     required String phone,
@@ -32,6 +33,8 @@ class BookingService{
           .doc(FirebaseAuth.instance.currentUser!.uid)
           .set(
         {
+          'userId':FirebaseAuth.instance.currentUser!.uid,
+          'deviceTokens':deviceToken,
           'name': name,
           'email': email,
           'date': date,

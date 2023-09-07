@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -6,8 +7,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:user_currentlocation_test/components/custom_button.dart';
 import 'package:user_currentlocation_test/components/custom_textfield.dart';
-import 'package:user_currentlocation_test/firebase_service/booking_service.dart';
+import 'package:user_currentlocation_test/firebase_helper/booking_service.dart';
+import 'package:user_currentlocation_test/firebase_helper/token_service.dart';
+import 'package:user_currentlocation_test/services/notification_service.dart';
 import 'package:user_currentlocation_test/utils/helper_class.dart';
+import 'package:http/http.dart'as http;
 
 class BookingScreen extends StatefulWidget {
   const BookingScreen({super.key});
@@ -23,8 +27,10 @@ class _BookingScreenState extends State<BookingScreen> {
   final dateController = TextEditingController();
   final picUpController = TextEditingController();
   final dropOffController = TextEditingController();
+  NotificationServices notificationServices=NotificationServices();
+  var deviceToken;
 
-  late var timer;
+
 
   @override
   void initState() {
@@ -32,9 +38,15 @@ class _BookingScreenState extends State<BookingScreen> {
     if (mounted) {
       SchedulerBinding.instance.addPostFrameCallback((_){
        fetchUserData();
+       getDeviceToken();
       });
     }
     super.initState();
+  }
+
+
+  Future<void> getDeviceToken()async{
+    deviceToken =await notificationServices.getDeviceToken();
   }
 
 
@@ -46,7 +58,6 @@ class _BookingScreenState extends State<BookingScreen> {
     dateController.dispose();
     picUpController.dispose();
     dropOffController.dispose();
-    timer.cancel();
     super.dispose();
   }
 
@@ -124,6 +135,7 @@ Future<void>fetchUserData()async{
               CustomButton(
                   onPressed: () {
                     BookingService.bookingPassenger(
+                      deviceToken: deviceToken,
                       name: nameController.text,
                       email: emailController.text,
                       phone: phoneController.text,
@@ -132,6 +144,7 @@ Future<void>fetchUserData()async{
                       dropLocation: dropOffController.text,
                       context: context,
                     );
+                    sendBooking();
                   },
                   text: "Send",)
             ],
@@ -140,4 +153,59 @@ Future<void>fetchUserData()async{
       ),
     );
   }
+
+  Future<void> sendBooking() async {
+    try {
+   var adminDeviceTokens= await TokenService.getAdminDeviceTokens();
+          print(" Admin DeviceToken : $adminDeviceTokens");
+      if (adminDeviceTokens.isNotEmpty) {
+        var body = {
+          'registration_ids': adminDeviceTokens, // Use 'registration_ids' for multiple devices.
+          'priority': 'high',
+          'notification': {
+            'title': "New Reservation Request From",
+            'body':nameController.text,
+
+          },
+          'data': {
+            'type': 'message',
+            'id': 'rrk123',
+            'image':
+            'https://cdn2.vectorstock.com/i/1000x1000/23/91/small-size-emoticon-vector-9852391.jpg',
+            'name':nameController.text,
+            'phone':phoneController.text,
+            "date": dateController.text,
+            "email": emailController.text,
+            "deviceToken": deviceToken,
+            'dropLocation': dropOffController.text,
+            'pickUpLocation':picUpController.text
+          },
+          "category": "News"
+        };
+
+        var headers = {
+          "Content-Type": "application/json",
+          "Authorization":
+          "key=AAAAD6BSupQ:APA91bFDMrMe-ELTtMAuL3-N-3xuyqHE_xFJWNbz7Xm_q4FeMxa1nUnWo0TpmRoHQi7uAuMLAfncbqVXBryFsWFs32kD5QhqxaVIYg0XlMrL_Mt1R2wDOvrfOLLhtmXKdq8A1-O5-J4z"
+        };
+
+        var response = await http.post(
+          Uri.parse("https://fcm.googleapis.com/fcm/send"),
+          body: jsonEncode(body),
+          headers: headers,
+        );
+
+        if (response.statusCode == 200) {
+          print("Notification sent successfully!");
+        } else {
+          print("Failed to send notification. Status code: ${response.statusCode}");
+        }
+      } else {
+        print("Device tokens are empty. Cannot send notification.");
+      }
+    } catch (e) {
+      print("Error sending notification: $e");
+    }
+  }
+
 }
